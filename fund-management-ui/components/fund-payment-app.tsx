@@ -11,6 +11,7 @@ import {
   Wallet,
   QrCode,
   AlertTriangle,
+  LayoutDashboard,
 } from "lucide-react";
 
 // Types
@@ -477,6 +478,17 @@ export default function FundPaymentApp() {
           )}
           {appState === "success" && <SuccessState onReset={handleReset} />}
         </AnimatePresence>
+
+        {/* Admin Link */}
+        <div className="mt-8">
+          <a 
+            href="/admin" 
+            className="text-xs text-muted-foreground/40 hover:text-primary transition-colors flex items-center gap-1"
+          >
+            <LayoutDashboard className="w-3 h-3" />
+            Admin Access
+          </a>
+        </div>
       </div>
     </div>
   );
