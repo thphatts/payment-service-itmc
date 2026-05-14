@@ -3,39 +3,47 @@ package com.itmc.payment_service.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import javax.management.relation.Role;
+import com.itmc.payment_service.model.Role;
 
 @Entity
 @Table(name = "users")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "member_id", unique = true, nullable = false)
-    private String member_id;
+    @Column(unique = true, nullable = false)
+    private String studentId;
 
-    @Column(nullable = false)
     private String fullName;
 
-    @Email(message = "Định dạng email không hợp lệ")
-    @Column(unique = true, nullable = false)
+    @Email
+    @Column(unique = true)
     private String email;
 
-    @Pattern(regexp = "^(0|\\+84)[0-9]{9}$", message = "Số điện thoại không hợp lệ")
-    @Column(name = "phone_number")
+    @Pattern(regexp = "^(0|\\+84)(\\d{9})$", message = "Invalid phone number")
     private String phoneNumber;
 
-    // ---------------------------
-
     @Enumerated(EnumType.STRING)
-    private Role role; // Enum: ADMIN, MEMBER
+    private Role role;
+
+    public User() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getStudentId() { return studentId; }
+    public void setStudentId(String studentId) { this.studentId = studentId; }
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 }

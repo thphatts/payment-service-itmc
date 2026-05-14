@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: club-fund-management
+  datasource:
+    url: jdbc:mysql://localhost:3306/club_fund?createDatabaseIfNotExist=true
+    username: root
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: ${REDIS_PASSWORD}
+
+app:
+  webhook:
+    secret: ${WEBHOOK_SECRET}
+  bank:
+    id: ${BANK_ID}
+    account-no: ${BANK_ACCOUNT_NO}
+    account-name: ${BANK_ACCOUNT_NAME}

@@ -1,10 +1,5 @@
 package com.itmc.payment_service.repository;
-
-import com.itmc.payment_service.entity.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import com.itmc.payment_service.entity.Transaction;
 
-@Repository
-public interface TransactionRepository extends JpaRepository<Transaction, Long> {
-    boolean existsByTransactionCode(String transactionCode);
-}
+public interface TransactionRepository extends JpaRepository<Transaction, Long> {}
