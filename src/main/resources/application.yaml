@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/payment_itmc_db
+    username: root
+    password: root
+    data:
+      redis:
+        host: localhost
+        port: 6379
