@@ -16,12 +16,16 @@ import org.apache.poi.ss.usermodel.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.itmc.payment_service.entity.Campaign;
 import com.itmc.payment_service.entity.Transaction;
 import com.itmc.payment_service.entity.User;
 import com.itmc.payment_service.model.Role;
@@ -172,14 +176,12 @@ public class AdminController {
                 String studentId = "";
                 String fullName = "";
                 String email = "";
-                String department = "";
 
                 if (data.length >= 5) {
                     // Format Excel CLB: STT(0) | Họ tên(1) | MSSV(2) | Mail(3) | Ban(4)
                     studentId = data[2].trim().toUpperCase();
                     fullName = data[1].trim();
                     email = data[3].trim();
-                    department = data[4].trim();
                 } else if (data.length >= 3) {
                     // Thử detect: nếu cột 0 giống MSSV -> format CSV đơn giản
                     if (STUDENT_ID_PATTERN.matcher(data[0].trim()).matches()) {
@@ -293,10 +295,36 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("success", true, "message", "Đã xác nhận thanh toán cho " + user.getFullName()));
     }
 
-    // ========== 4. TẠO QR TÙY CHỈNH ==========
-    @GetMapping("/qr/generate")
-    public ResponseEntity<QrResponse> generateCustomQr(@RequestParam String content, @RequestParam BigDecimal amount) {
-        return ResponseEntity.ok(campaignService.generateCustomQr(content, amount));
+    // ========== 4. TẠO QR TÙY CHỈNH (Đã xóa để đồng bộ với PayOS) ==========
+
+    // ========== 5. QUẢN LÝ THÔNG TIN QUỸ ==========
+    @GetMapping("/campaign/{code}")
+    public ResponseEntity<?> getCampaign(@PathVariable String code) {
+        return campaignRepository.findByCampaignCode(code)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/campaign/{code}")
+    public ResponseEntity<?> updateCampaign(@PathVariable String code, @RequestBody Map<String, Object> updates) {
+        Campaign campaign = campaignRepository.findByCampaignCode(code)
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+        
+        if (updates.containsKey("title")) campaign.setTitle((String) updates.get("title"));
+        if (updates.containsKey("description")) campaign.setDescription((String) updates.get("description"));
+        if (updates.containsKey("amountRequired")) {
+            Object amt = updates.get("amountRequired");
+            if (amt instanceof Integer i) {
+                campaign.setAmountRequired(new BigDecimal(i));
+            } else if (amt instanceof Double d) {
+                campaign.setAmountRequired(BigDecimal.valueOf(d));
+            } else if (amt instanceof String s) {
+                campaign.setAmountRequired(new BigDecimal(s));
+            }
+        }
+        
+        campaignRepository.save(campaign);
+        return ResponseEntity.ok(Map.of("message", "Đã cập nhật thông tin quỹ", "campaign", campaign));
     }
 
     // ========== HELPER: Đọc file CSV ==========

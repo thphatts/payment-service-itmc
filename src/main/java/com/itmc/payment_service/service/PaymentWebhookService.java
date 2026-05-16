@@ -1,9 +1,14 @@
 package com.itmc.payment_service.service;
 
-import lombok.extern.slf4j.Slf4j;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.itmc.payment_service.dto.PaymentWebhookRequest;
 import com.itmc.payment_service.entity.Campaign;
 import com.itmc.payment_service.entity.Transaction;
@@ -13,10 +18,7 @@ import com.itmc.payment_service.repository.CampaignRepository;
 import com.itmc.payment_service.repository.TransactionRepository;
 import com.itmc.payment_service.repository.UserRepository;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -53,13 +55,24 @@ public class PaymentWebhookService {
         }
 
         try {
-            Matcher matcher = CONTENT_PATTERN.matcher(request.getTransactionContent());
-            if (!matcher.find()) {
-                throw new RuntimeException("Invalid transaction content format: " + request.getTransactionContent());
+            // Lấy trực tiếp orderCode từ request (đã được parse từ PayOS WebhookData)
+            String orderCodeStr = String.valueOf(request.getOrderCode());
+            
+            if (request.getOrderCode() == null || request.getOrderCode() == 0) {
+                throw new RuntimeException("Không tìm thấy orderCode trong webhook data!");
             }
 
-            String studentId = matcher.group(1).toUpperCase();
-            String campaignCode = matcher.group(2).toUpperCase();
+            // Tra cứu Redis để lấy studentId và campaignCode
+            String mappingKey = "PAYOS_ORDER:" + orderCodeStr;
+            String mappingValue = redisTemplate.opsForValue().get(mappingKey);
+            
+            if (mappingValue == null) {
+                throw new RuntimeException("Không tìm thấy thông tin giao dịch cho orderCode: " + orderCodeStr);
+            }
+
+            String[] parts = mappingValue.split(":");
+            String studentId = parts[0];
+            String campaignCode = parts[1];
 
             User user = userRepository.findByStudentId(studentId)
                     .orElseThrow(() -> new RuntimeException("User not found: " + studentId));

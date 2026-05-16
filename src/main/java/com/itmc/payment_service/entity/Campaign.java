@@ -13,9 +13,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "campaigns")
@@ -28,6 +25,8 @@ public class Campaign {
     private String campaignCode;
 
     private String title;
+
+    private String description;
 
     private BigDecimal amountRequired;
 
@@ -62,6 +61,14 @@ public class Campaign {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public BigDecimal getAmountRequired() {

@@ -6,6 +6,7 @@ public class PaymentWebhookRequest {
     private String transactionId;
     private BigDecimal amountIn;
     private String transactionContent;
+    private Long orderCode;
 
     public PaymentWebhookRequest() {}
 
@@ -17,4 +18,7 @@ public class PaymentWebhookRequest {
 
     public String getTransactionContent() { return transactionContent; }
     public void setTransactionContent(String transactionContent) { this.transactionContent = transactionContent; }
+
+    public Long getOrderCode() { return orderCode; }
+    public void setOrderCode(Long orderCode) { this.orderCode = orderCode; }
 }
