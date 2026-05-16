@@ -1,6 +1,5 @@
 package com.itmc.payment_service.dto;
 
-import lombok.Data;
 import java.math.BigDecimal;
 
 public class PaymentWebhookRequest {

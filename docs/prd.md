@@ -13,6 +13,9 @@ ClubSphere is a club fund management system designed to automate the process of 
 - **Real-time Webhook:** Automatically update transaction status when a payment is completed.
 - **Member Management:** Track payments based on Student IDs.
 - **Campaign Management:** Organize payments into specific "Campaigns" (e.g., Semester 2 Fund).
+- **Batch Import:** Support importing members from Excel (.xlsx, .xls) and CSV files.
+- **Admin Dashboard:** Real-time statistics on total members, funds, and recent payment activity.
+- **Attendance Tracking:** Digital attendance sheets for club meetings.
 
 ## 4. User Flows
 1. **Admin** creates a Campaign with a required amount.

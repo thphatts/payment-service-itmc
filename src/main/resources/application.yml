@@ -26,3 +26,7 @@ app:
     id: ${BANK_ID}
     account-no: ${BANK_ACCOUNT_NO}
     account-name: ${BANK_ACCOUNT_NAME}
+  payos:
+    client-id: ${PAYOS_CLIENT_ID}
+    api-key: ${PAYOS_API_KEY}
+    checksum-key: ${PAYOS_CHECKSUM_KEY}

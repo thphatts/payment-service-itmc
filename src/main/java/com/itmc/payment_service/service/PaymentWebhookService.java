@@ -27,7 +27,11 @@ public class PaymentWebhookService {
     private final TransactionRepository transactionRepository;
 
     private static final String REDIS_PREFIX = "PAYMENT_PROCESSED:";
-    private static final Pattern CONTENT_PATTERN = Pattern.compile("QUYCLB\\s+([A-Z0-9]+)\\s+([A-Z0-9]+)", Pattern.CASE_INSENSITIVE);
+    // Match: QUYCLB <MSSV> <CAMPAIGN_CODE>
+    // MSSV: 1 chữ cái (N, B, ...) + 2 số năm + 2-5 ký tự ngành + 2-4 số
+    private static final Pattern CONTENT_PATTERN = Pattern.compile(
+            "QUYCLB\\s+([A-Z]\\d{2}[A-Z]{2,5}\\d{2,4})\\s+([A-Z0-9]+)",
+            Pattern.CASE_INSENSITIVE);
 
     public PaymentWebhookService(StringRedisTemplate redisTemplate, UserRepository userRepository,
                                  CampaignRepository campaignRepository, TransactionRepository transactionRepository) {
@@ -51,11 +55,11 @@ public class PaymentWebhookService {
         try {
             Matcher matcher = CONTENT_PATTERN.matcher(request.getTransactionContent());
             if (!matcher.find()) {
-                throw new RuntimeException("Invalid transaction content format");
+                throw new RuntimeException("Invalid transaction content format: " + request.getTransactionContent());
             }
 
-            String studentId = matcher.group(1);
-            String campaignCode = matcher.group(2);
+            String studentId = matcher.group(1).toUpperCase();
+            String campaignCode = matcher.group(2).toUpperCase();
 
             User user = userRepository.findByStudentId(studentId)
                     .orElseThrow(() -> new RuntimeException("User not found: " + studentId));
@@ -74,7 +78,8 @@ public class PaymentWebhookService {
             transaction.setCreatedAt(LocalDateTime.now());
 
             transactionRepository.save(transaction);
-            log.info("Payment processed successfully for user {} and campaign {}", studentId, campaignCode);
+            log.info("Payment processed: user={}, campaign={}, amount={}, status={}",
+                    studentId, campaignCode, request.getAmountIn(), status);
 
         } catch (RuntimeException e) {
             redisTemplate.delete(redisKey); // Rollback idempotency key

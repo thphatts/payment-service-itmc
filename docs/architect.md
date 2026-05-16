@@ -7,7 +7,9 @@
 - **Cache/Idempotency:** Redis (Ensuring webhooks are not processed twice).
 - **Payment Gateway:** PayOS (QR-based banking integration).
 
-## 2. High-Level Flow
+## 2. High-Level Flows
+
+### Payment Flow
 ```mermaid
 sequenceDiagram
     participant Member
@@ -39,6 +41,25 @@ sequenceDiagram
 
     Backend->>Database: Update Transaction & User Status
     Backend-->>PayOS: 200 OK
+```
+
+### Administrative Flow (Batch Import)
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant Frontend
+    participant Backend
+    participant POI as Apache POI
+    participant Database
+
+    Admin->>Frontend: Upload Excel (.xlsx/.xls)
+    Frontend->>Backend: POST /api/v1/admin/users/import
+    Backend->>POI: Parse Workbook
+    POI-->>Backend: List<Rows>
+    Backend->>Backend: Auto-detect Columns (STT, Name, ID, etc)
+    Backend->>Backend: Validate Student ID Pattern
+    Backend->>Database: Save Batch Users
+    Backend-->>Frontend: Success (Count, Duplicates, Errors)
 ```
 
 ## 3. Deployment

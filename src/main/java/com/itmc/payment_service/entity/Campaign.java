@@ -15,7 +15,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
@@ -38,26 +37,62 @@ public class Campaign {
     @Enumerated(EnumType.STRING)
     private CampaignStatus status;
 
-    public Campaign() {}
+    public Campaign() {
+    }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getCampaignCode() { return campaignCode; }
-    public void setCampaignCode(String campaignCode) { this.campaignCode = campaignCode; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public String getCampaignCode() {
+        return campaignCode;
+    }
 
-    public BigDecimal getAmountRequired() { return amountRequired; }
-    public void setAmountRequired(BigDecimal amountRequired) { this.amountRequired = amountRequired; }
+    public void setCampaignCode(String campaignCode) {
+        this.campaignCode = campaignCode;
+    }
 
-    public LocalDateTime getStartDate() { return startDate; }
-    public void setStartDate(LocalDateTime startDate) { this.startDate = startDate; }
+    public String getTitle() {
+        return title;
+    }
 
-    public LocalDateTime getEndDate() { return endDate; }
-    public void setEndDate(LocalDateTime endDate) { this.endDate = endDate; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public CampaignStatus getStatus() { return status; }
-    public void setStatus(CampaignStatus status) { this.status = status; }
+    public BigDecimal getAmountRequired() {
+        return amountRequired;
+    }
+
+    public void setAmountRequired(BigDecimal amountRequired) {
+        this.amountRequired = amountRequired;
+    }
+
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
+
+    public CampaignStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(CampaignStatus status) {
+        this.status = status;
+    }
 }

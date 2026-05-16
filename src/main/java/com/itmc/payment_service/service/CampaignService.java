@@ -7,6 +7,7 @@ import com.itmc.payment_service.dto.QrResponse;
 import com.itmc.payment_service.entity.Campaign;
 import com.itmc.payment_service.repository.CampaignRepository;
 import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
 
 @Service
 public class CampaignService {
@@ -25,12 +26,16 @@ public class CampaignService {
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
 
         String content = String.format("QUYCLB %s %s", studentId, campaignCode);
+        return generateCustomQr(content, campaign.getAmountRequired());
+    }
+
+    public QrResponse generateCustomQr(String content, BigDecimal amount) {
         String encodedContent = UriUtils.encode(content, StandardCharsets.UTF_8);
         String encodedName = UriUtils.encode(accountName, StandardCharsets.UTF_8);
 
         // Format VietQR Template: https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-compact2.png?amount=<AMT>&addInfo=<INFO>&accountName=<NAME>
         String qrUrl = String.format("https://img.vietqr.io/image/%s-%s-compact2.png?amount=%s&addInfo=%s&accountName=%s",
-                bankId, accountNo, campaign.getAmountRequired().toPlainString(), encodedContent, encodedName);
+                bankId, accountNo, amount.toPlainString(), encodedContent, encodedName);
 
         QrResponse response = new QrResponse();
         response.setQrUrl(qrUrl);
@@ -38,7 +43,7 @@ public class CampaignService {
         response.setBankId(bankId);
         response.setAccountName(accountName);
         response.setContent(content);
-        response.setAmount(campaign.getAmountRequired());
+        response.setAmount(amount);
         
         return response;
     }

@@ -12,6 +12,12 @@
 - `POST /api/webhook/payment`: Receives payment confirmation from PayOS.
   - **Security:** Requires signature verification via PayOS SDK.
 
+### Admin & Dashboard (`AdminController`)
+- `GET /api/v1/admin/dashboard/stats`: Provides aggregated metrics for the dashboard.
+- `POST /api/v1/admin/users/import`: Handles multi-format (Excel/CSV) file uploads. Supports `.xlsx`, `.xls`, `.csv`.
+- `GET /api/v1/admin/students/overview`: Returns detailed member status and payment history.
+- `POST /api/v1/admin/students/confirm-payment`: Manually mark a student as PAID.
+
 ## 2. Data Models (Entities)
 - **User:** Stores `studentId`, `fullName`, `email`, `role`.
 - **Campaign:** Stores `campaignCode`, `amountRequired`, `status` (OPEN/CLOSED).
