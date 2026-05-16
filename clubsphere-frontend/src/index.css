@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.icon-fill {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* Ẩn scrollbar ngang cho các tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+/* --- Custom Radio Buttons for Attendance --- */
+.radio-custom {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+    background-color: white;
+    transition: all 0.2s ease-in-out;
+}
+.radio-custom:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+.radio-present:checked { border-color: #15803d; color: #15803d; background-color: #dcfce7; }
+.radio-absent:checked { border-color: #b91c1c; color: #b91c1c; background-color: #fee2e2; }
+.radio-late:checked { border-color: #b45309; color: #b45309; background-color: #fef3c7; }
+
+.radio-wrapper:has(input.radio-present:checked) { background-color: #dcfce7; border-color: #15803d; }
+.radio-wrapper:has(input.radio-absent:checked) { background-color: #fee2e2; border-color: #b91c1c; }
+.radio-wrapper:has(input.radio-late:checked) { background-color: #fef3c7; border-color: #b45309; }
