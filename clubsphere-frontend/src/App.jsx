@@ -1,25 +1,48 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './pages/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Members from './pages/Members.jsx';
 import Attendance from './pages/Attendance.jsx';
+import Settings from './pages/Settings.jsx';
 import FundAdmin from './pages/FundAdmin.jsx';
 import MyPayment from './pages/MyPayment.jsx';
+import Login from './pages/Login.jsx';
+
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Layout dùng chung cho tất cả các trang */}
-        <Route path="/" element={<Layout />}>
+        <Route path="/login" element={<Login />} />
+        
+        {/* Protected Routes */}
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="members" element={<Members />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="directory" element={<Members />} />
           <Route path="fund-admin" element={<FundAdmin />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="my-payment" element={<MyPayment />} />
         </Route>
+
+        {/* Catch all redirect to dashboard */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

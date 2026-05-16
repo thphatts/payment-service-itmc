@@ -34,6 +34,7 @@ import com.itmc.payment_service.repository.TransactionRepository;
 import com.itmc.payment_service.repository.UserRepository;
 import com.itmc.payment_service.service.CampaignService;
 import com.itmc.payment_service.dto.QrResponse;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -44,6 +45,7 @@ public class AdminController {
     private final TransactionRepository transactionRepo;
     private final CampaignRepository campaignRepository;
     private final CampaignService campaignService;
+    private final PasswordEncoder passwordEncoder;
 
     // MSSV: 1 chữ cái đầu (B, N, ...) + 2 số năm + 2-4 ký tự mã ngành + 2-4 số
     // Ví dụ: N23DCCN204, B23DCCN123, N24DCPT006, N23DCAT074
@@ -52,11 +54,13 @@ public class AdminController {
             "^[A-Z0-9]{3,15}$", Pattern.CASE_INSENSITIVE);
 
     public AdminController(UserRepository userRepo, TransactionRepository transactionRepo, 
-                           CampaignRepository campaignRepository, CampaignService campaignService) {
+                           CampaignRepository campaignRepository, CampaignService campaignService,
+                           PasswordEncoder passwordEncoder) {
         this.userRepo = userRepo;
         this.transactionRepo = transactionRepo;
         this.campaignRepository = campaignRepository;
         this.campaignService = campaignService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // ========== 1. XEM TỔNG QUAN THÀNH VIÊN ==========
@@ -246,6 +250,7 @@ public class AdminController {
                 user.setFullName(fullName);
                 user.setEmail(email.isEmpty() ? null : email);
                 user.setRole(Role.MEMBER);
+                user.setPassword(passwordEncoder.encode(studentId)); // Default password is MSSV
                 newUsers.add(user);
             }
 
@@ -293,6 +298,24 @@ public class AdminController {
         transactionRepo.save(transaction);
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Đã xác nhận thanh toán cho " + user.getFullName()));
+    }
+
+    // ========== 3b. XÓA SINH VIÊN ==========
+    @org.springframework.web.bind.annotation.DeleteMapping("/users/{studentId}")
+    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable String studentId) {
+        User user = userRepo.findByStudentId(studentId.toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên"));
+
+        // Xóa các giao dịch liên quan trước (Cascade)
+        List<Transaction> userTransactions = transactionRepo.findAll().stream()
+                .filter(t -> t.getUser().getStudentId().equals(user.getStudentId()))
+                .collect(Collectors.toList());
+        transactionRepo.deleteAll(userTransactions);
+
+        // Xóa sinh viên
+        userRepo.delete(user);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đã xóa sinh viên " + studentId));
     }
 
     // ========== 4. TẠO QR TÙY CHỈNH (Đã xóa để đồng bộ với PayOS) ==========

@@ -9,7 +9,11 @@ const Members = () => {
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/v1/admin/students/overview');
+      const response = await fetch('/api/v1/admin/students/overview', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       const data = await response.json();
       setMembers(data);
     } catch (error) {
@@ -30,6 +34,9 @@ const Members = () => {
       setLoading(true);
       const response = await fetch('/api/v1/admin/users/import', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: formData,
       });
       const result = await response.json();
@@ -38,10 +45,37 @@ const Members = () => {
         setMessage({ type: 'success', text: result.message });
         fetchMembers(); // Refresh list
       } else {
-        setMessage({ type: 'error', text: result.message });
+        setMessage({ type: 'error', text: result.message || 'Import thất bại' });
       }
     } catch (error) {
       setMessage({ type: 'error', text: 'Lỗi kết nối máy chủ' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (studentId) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa sinh viên ${studentId}? Mọi dữ liệu giao dịch liên quan sẽ bị xóa.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/v1/admin/users/${studentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMessage({ type: 'success', text: result.message });
+        fetchMembers();
+      } else {
+        setMessage({ type: 'error', text: result.message || 'Xóa thất bại' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Lỗi khi kết nối đến máy chủ' });
     } finally {
       setLoading(false);
     }
@@ -141,7 +175,10 @@ const Members = () => {
                         <button className="p-1.5 text-on-surface-variant hover:text-primary rounded-md transition-colors">
                           <span className="material-symbols-outlined text-[20px]">edit</span>
                         </button>
-                        <button className="p-1.5 text-on-surface-variant hover:text-error rounded-md transition-colors">
+                        <button 
+                          onClick={() => handleDelete(member.studentId)}
+                          className="p-1.5 text-on-surface-variant hover:text-error rounded-md transition-colors"
+                        >
                           <span className="material-symbols-outlined text-[20px]">delete</span>
                         </button>
                       </div>

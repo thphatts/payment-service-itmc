@@ -1,8 +1,11 @@
 import React from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const Layout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const studentId = localStorage.getItem('studentId') || 'User';
+  const role = localStorage.getItem('role') || 'MEMBER';
 
   // Hàm helper để check active menu
   const isActive = (path) => {
@@ -10,6 +13,13 @@ const Layout = () => {
       return location.pathname === '/';
     }
     return location.pathname.startsWith(path);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('studentId');
+    navigate('/login');
   };
 
   return (
@@ -38,12 +48,14 @@ const Layout = () => {
         </div>
 
         {/* CTA */}
-        <div className="px-4 mb-6">
-          <button className="w-full flex items-center justify-center gap-2 bg-primary text-on-primary hover:bg-surface-tint hover:shadow-md transition-all duration-200 py-2.5 rounded-lg text-label-md font-label-md">
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            New Event
-          </button>
-        </div>
+        {role === 'ADMIN' && (
+          <div className="px-4 mb-6">
+            <button className="w-full flex items-center justify-center gap-2 bg-primary text-on-primary hover:bg-surface-tint hover:shadow-md transition-all duration-200 py-2.5 rounded-lg text-label-md font-label-md">
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              New Event
+            </button>
+          </div>
+        )}
 
         {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto px-2 space-y-1">
@@ -61,47 +73,51 @@ const Layout = () => {
             <span className="text-label-md font-label-md">Dashboard</span>
           </Link>
 
-          <Link
-            to="/members"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
-              isActive('/members') 
-                ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
-                : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
-            }`}
-          >
-            <span className={`material-symbols-outlined text-[20px] ${isActive('/members') ? 'icon-fill' : ''}`}>
-              group
-            </span>
-            <span className="text-label-md font-label-md">Members</span>
-          </Link>
+          {role === 'ADMIN' && (
+            <>
+              <Link
+                to="/members"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
+                  isActive('/members') 
+                    ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
+                    : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[20px] ${isActive('/members') ? 'icon-fill' : ''}`}>
+                  group
+                </span>
+                <span className="text-label-md font-label-md">Members</span>
+              </Link>
 
-          <Link
-            to="/attendance"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
-              isActive('/attendance') 
-                ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
-                : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
-            }`}
-          >
-            <span className={`material-symbols-outlined text-[20px] ${isActive('/attendance') ? 'icon-fill' : ''}`}>
-              calendar_check
-            </span>
-            <span className="text-label-md font-label-md">Attendance</span>
-          </Link>
+              <Link
+                to="/attendance"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
+                  isActive('/attendance') 
+                    ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
+                    : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[20px] ${isActive('/attendance') ? 'icon-fill' : ''}`}>
+                  calendar_check
+                </span>
+                <span className="text-label-md font-label-md">Attendance</span>
+              </Link>
 
-          <Link
-            to="/fund-admin"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
-              isActive('/fund-admin') 
-                ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
-                : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
-            }`}
-          >
-            <span className={`material-symbols-outlined text-[20px] ${isActive('/fund-admin') ? 'icon-fill' : ''}`}>
-              account_balance_wallet
-            </span>
-            <span className="text-label-md font-label-md">Finance</span>
-          </Link>
+              <Link
+                to="/fund-admin"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
+                  isActive('/fund-admin') 
+                    ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
+                    : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[20px] ${isActive('/fund-admin') ? 'icon-fill' : ''}`}>
+                  account_balance_wallet
+                </span>
+                <span className="text-label-md font-label-md">Finance Admin</span>
+              </Link>
+            </>
+          )}
 
           <Link
             to="/my-payment"
@@ -133,8 +149,13 @@ const Layout = () => {
           <div className="flex items-center gap-3 px-4 py-2">
              <img src="https://i.pravatar.cc/150?img=11" alt="avatar" className="w-8 h-8 rounded-full border border-outline-variant" />
              <div className="overflow-hidden">
-               <p className="text-sm font-bold text-on-surface truncate">Admin User</p>
-               <p className="text-xs text-on-surface-variant cursor-pointer hover:underline">Log out</p>
+               <p className="text-sm font-bold text-on-surface truncate">{studentId}</p>
+               <p 
+                onClick={handleLogout}
+                className="text-xs text-on-surface-variant cursor-pointer hover:underline"
+               >
+                 Log out
+               </p>
              </div>
           </div>
         </div>
@@ -165,10 +186,12 @@ const Layout = () => {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
             </button>
             <div className="h-6 w-px bg-outline-variant/50 mx-2 hidden sm:block"></div>
-            <button className="hidden sm:flex items-center gap-2 bg-primary-container text-on-primary-container hover:bg-primary-fixed-dim px-3 py-1.5 rounded-lg transition-all text-label-sm font-label-sm font-bold">
-              <span className="material-symbols-outlined text-[16px]">add</span>
-              + New
-            </button>
+            {role === 'ADMIN' && (
+              <button className="hidden sm:flex items-center gap-2 bg-primary-container text-on-primary-container hover:bg-primary-fixed-dim px-3 py-1.5 rounded-lg transition-all text-label-sm font-label-sm font-bold">
+                <span className="material-symbols-outlined text-[16px]">add</span>
+                + New
+              </button>
+            )}
             <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-surface-container-high hover:border-primary transition-all cursor-pointer ml-2">
               <img src="https://i.pravatar.cc/150?img=11" alt="profile" className="w-full h-full object-cover" />
             </div>
