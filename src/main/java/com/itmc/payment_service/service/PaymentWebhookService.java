@@ -35,12 +35,16 @@ public class PaymentWebhookService {
             "QUYCLB\\s+([A-Z]\\d{2}[A-Z]{2,5}\\d{2,4})\\s+([A-Z0-9]+)",
             Pattern.CASE_INSENSITIVE);
 
+    private final NotificationService notificationService;
+
     public PaymentWebhookService(StringRedisTemplate redisTemplate, UserRepository userRepository,
-                                 CampaignRepository campaignRepository, TransactionRepository transactionRepository) {
+                                 CampaignRepository campaignRepository, TransactionRepository transactionRepository,
+                                 NotificationService notificationService) {
         this.redisTemplate = redisTemplate;
         this.userRepository = userRepository;
         this.campaignRepository = campaignRepository;
         this.transactionRepository = transactionRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -91,6 +95,17 @@ public class PaymentWebhookService {
             transaction.setCreatedAt(LocalDateTime.now());
 
             transactionRepository.save(transaction);
+            
+            if (status == TransactionStatus.SUCCESS) {
+                notificationService.createNotification(user, 
+                    "Thanh toán thành công cho quỹ: " + campaign.getTitle() + ". Số tiền: " + request.getAmountIn() + " VNĐ", 
+                    "SUCCESS");
+            } else {
+                notificationService.createNotification(user, 
+                    "Thanh toán ghi nhận một phần cho quỹ: " + campaign.getTitle() + ". Số tiền: " + request.getAmountIn() + " VNĐ", 
+                    "INFO");
+            }
+
             log.info("Payment processed: user={}, campaign={}, amount={}, status={}",
                     studentId, campaignCode, request.getAmountIn(), status);
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const Layout = () => {
@@ -6,6 +6,48 @@ const Layout = () => {
   const navigate = useNavigate();
   const studentId = localStorage.getItem('studentId') || 'User';
   const role = localStorage.getItem('role') || 'MEMBER';
+  
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const res = await fetch('http://localhost:8080/api/notifications/unread', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        setNotifications(data.data);
+      }
+    } catch (e) {
+      console.error('Lỗi lấy thông báo:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const markAsRead = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:8080/api/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setNotifications(notifications.filter(n => n.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Hàm helper để check active menu
   const isActive = (path) => {
@@ -198,10 +240,38 @@ const Layout = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <button className="text-on-surface-variant hover:bg-surface-container p-2 rounded-full transition-all relative">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="text-on-surface-variant hover:bg-surface-container p-2 rounded-full transition-all relative"
+              >
+                <span className="material-symbols-outlined">notifications</span>
+                {notifications.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-surface border border-outline-variant rounded-xl shadow-lg z-50 overflow-hidden">
+                  <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+                    <h3 className="font-bold text-on-surface">Thông báo</h3>
+                    <span className="text-xs bg-primary-container text-on-primary-container px-2 py-1 rounded-full font-bold">{notifications.length} mới</span>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-4 text-center text-on-surface-variant text-sm">Không có thông báo mới</div>
+                    ) : (
+                      notifications.map(n => (
+                        <div key={n.id} className="p-3 border-b border-outline-variant/50 hover:bg-surface-container transition-colors cursor-pointer" onClick={() => markAsRead(n.id)}>
+                          <p className="text-sm text-on-surface">{n.message}</p>
+                          <p className="text-xs text-on-surface-variant mt-1">{new Date(n.createdAt).toLocaleString('vi-VN')}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="h-6 w-px bg-outline-variant/50 mx-2 hidden sm:block"></div>
             {role === 'ADMIN' && (
               <button className="hidden sm:flex items-center gap-2 bg-primary-container text-on-primary-container hover:bg-primary-fixed-dim px-3 py-1.5 rounded-lg transition-all text-label-sm font-label-sm font-bold">
