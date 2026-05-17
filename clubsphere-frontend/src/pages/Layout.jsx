@@ -39,7 +39,7 @@ const Layout = () => {
           </div>
           <div className="overflow-hidden">
             <h1 className="text-headline-md font-headline-md font-bold text-on-surface dark:text-inverse-on-surface truncate">
-              CLB ITMC
+              ITMC
             </h1>
             <p className="text-label-sm font-label-sm text-on-surface-variant dark:text-surface-variant truncate">
               Hệ thống quản lý
@@ -73,21 +73,22 @@ const Layout = () => {
             <span className="text-label-md font-label-md">Dashboard</span>
           </Link>
 
+          <Link
+            to="/members"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
+              isActive('/members') 
+                ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
+                : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
+            }`}
+          >
+            <span className={`material-symbols-outlined text-[20px] ${isActive('/members') ? 'icon-fill' : ''}`}>
+              group
+            </span>
+            <span className="text-label-md font-label-md">Members</span>
+          </Link>
+
           {role === 'ADMIN' && (
             <>
-              <Link
-                to="/members"
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
-                  isActive('/members') 
-                    ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
-                    : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
-                }`}
-              >
-                <span className={`material-symbols-outlined text-[20px] ${isActive('/members') ? 'icon-fill' : ''}`}>
-                  group
-                </span>
-                <span className="text-label-md font-label-md">Members</span>
-              </Link>
 
               <Link
                 to="/attendance"

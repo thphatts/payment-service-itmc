@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const role = localStorage.getItem('role') || 'MEMBER';
   const [stats, setStats] = useState({
     totalMembers: 0,
     activeMembers: 0,
@@ -168,25 +169,27 @@ const Dashboard = () => {
 
         {/* Right Column (Sidebar Widgets) */}
         <div className="space-y-lg">
-          <div className="bg-surface border border-outline-variant/50 rounded-xl shadow-sm p-5 relative overflow-hidden">
-            <h3 className="text-label-md font-label-md font-bold text-on-surface uppercase tracking-wide mb-5">Quick Actions</h3>
-            <div className="space-y-3">
-              <button 
-                onClick={() => navigate('/members')}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-outline-variant hover:border-primary hover:bg-primary/5 transition-all text-left"
-              >
-                <span className="material-symbols-outlined text-primary">person_add</span>
-                <span className="text-sm font-medium">Add New Member</span>
-              </button>
-              <button 
-                onClick={() => navigate('/members')}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-outline-variant hover:border-primary hover:bg-primary/5 transition-all text-left"
-              >
-                <span className="material-symbols-outlined text-primary">upload_file</span>
-                <span className="text-sm font-medium">Import Members</span>
-              </button>
+          {role === 'ADMIN' && (
+            <div className="bg-surface border border-outline-variant/50 rounded-xl shadow-sm p-5 relative overflow-hidden">
+              <h3 className="text-label-md font-label-md font-bold text-on-surface uppercase tracking-wide mb-5">Quick Actions</h3>
+              <div className="space-y-3">
+                <button 
+                  onClick={() => navigate('/members')}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-outline-variant hover:border-primary hover:bg-primary/5 transition-all text-left"
+                >
+                  <span className="material-symbols-outlined text-primary">person_add</span>
+                  <span className="text-sm font-medium">Add New Member</span>
+                </button>
+                <button 
+                  onClick={() => navigate('/members')}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border border-outline-variant hover:border-primary hover:bg-primary/5 transition-all text-left"
+                >
+                  <span className="material-symbols-outlined text-primary">upload_file</span>
+                  <span className="text-sm font-medium">Import Members</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

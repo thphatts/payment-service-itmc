@@ -5,6 +5,7 @@ const Members = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
+  const role = localStorage.getItem('role') || 'MEMBER';
 
   const fetchMembers = async () => {
     try {
@@ -94,15 +95,19 @@ const Members = () => {
           <p className="text-body-md text-on-surface-variant mt-1">Quản lý và theo dõi thông tin thành viên câu lạc bộ.</p>
         </div>
         <div className="flex gap-2">
-          <label className="bg-surface text-on-surface border border-outline-variant px-5 py-2.5 rounded-lg font-label-md hover:bg-surface-container transition-all shadow-sm flex items-center gap-2 cursor-pointer">
-            <span className="material-symbols-outlined text-sm">upload_file</span>
-            Import Excel
-            <input type="file" className="hidden" onChange={handleImport} accept=".xlsx,.xls,.csv" />
-          </label>
-          <button className="bg-primary text-on-primary px-5 py-2.5 rounded-lg font-label-md hover:bg-surface-tint transition-all shadow-sm flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm">person_add</span>
-            + Thêm thủ công
-          </button>
+          {role === 'ADMIN' && (
+            <>
+              <label className="bg-surface text-on-surface border border-outline-variant px-5 py-2.5 rounded-lg font-label-md hover:bg-surface-container transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                <span className="material-symbols-outlined text-sm">upload_file</span>
+                Import Excel
+                <input type="file" className="hidden" onChange={handleImport} accept=".xlsx,.xls,.csv" />
+              </label>
+              <button className="bg-primary text-on-primary px-5 py-2.5 rounded-lg font-label-md hover:bg-surface-tint transition-all shadow-sm flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">person_add</span>
+                + Thêm thủ công
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -128,17 +133,19 @@ const Members = () => {
                 <th className="py-3 px-4 text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">MSSV</th>
                 <th className="py-3 px-4 text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Trạng thái Quỹ</th>
                 <th className="py-3 px-4 text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Tiền đã nộp</th>
-                <th className="py-3 px-4 text-right text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Thao tác</th>
+                {role === 'ADMIN' && (
+                  <th className="py-3 px-4 text-right text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Thao tác</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/30">
               {loading ? (
                 <tr>
-                  <td colSpan="5" className="py-10 text-center text-on-surface-variant">Đang tải danh sách...</td>
+                  <td colSpan={role === 'ADMIN' ? "5" : "4"} className="py-10 text-center text-on-surface-variant">Đang tải danh sách...</td>
                 </tr>
               ) : members.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="py-10 text-center text-on-surface-variant">Chưa có thành viên nào. Hãy import file Excel để bắt đầu.</td>
+                  <td colSpan={role === 'ADMIN' ? "5" : "4"} className="py-10 text-center text-on-surface-variant">Chưa có thành viên nào. {role === 'ADMIN' && 'Hãy import file Excel để bắt đầu.'}</td>
                 </tr>
               ) : (
                 members.map((member, index) => (
@@ -170,19 +177,21 @@ const Members = () => {
                     <td className="py-3 px-4 text-body-sm font-medium text-on-surface">
                       {member.amount.toLocaleString()}₫
                     </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="p-1.5 text-on-surface-variant hover:text-primary rounded-md transition-colors">
-                          <span className="material-symbols-outlined text-[20px]">edit</span>
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(member.studentId)}
-                          className="p-1.5 text-on-surface-variant hover:text-error rounded-md transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
-                        </button>
-                      </div>
-                    </td>
+                    {role === 'ADMIN' && (
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button className="p-1.5 text-on-surface-variant hover:text-primary rounded-md transition-colors">
+                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(member.studentId)}
+                            className="p-1.5 text-on-surface-variant hover:text-error rounded-md transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
