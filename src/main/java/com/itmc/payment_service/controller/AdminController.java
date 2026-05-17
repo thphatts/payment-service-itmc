@@ -65,13 +65,29 @@ public class AdminController {
 
     // ========== 1. XEM TỔNG QUAN THÀNH VIÊN ==========
     @GetMapping("/students/overview")
-    public ResponseEntity<List<Map<String, Object>>> getStudentsOverview() {
+    public ResponseEntity<List<Map<String, Object>>> getStudentsOverview(
+            @RequestParam(required = false) String campaignCode) {
         List<User> users = userRepo.findAll();
-        List<Transaction> transactions = transactionRepo.findAll();
-
-        BigDecimal amountRequired = campaignRepository.findByCampaignCode("CAMP01")
+        
+        String code = campaignCode;
+        if (code == null || code.trim().isEmpty()) {
+            List<Campaign> campaigns = campaignRepository.findAll();
+            if (!campaigns.isEmpty()) {
+                code = campaigns.get(campaigns.size() - 1).getCampaignCode();
+            } else {
+                code = "CAMP01";
+            }
+        }
+        
+        final String finalCode = code;
+        BigDecimal amountRequired = campaignRepository.findByCampaignCode(finalCode)
                 .map(c -> c.getAmountRequired())
                 .orElse(new BigDecimal("100000"));
+
+        // Lọc transactions thuộc campaign được chọn và trạng thái thành công
+        List<Transaction> transactions = transactionRepo.findAll().stream()
+                .filter(t -> t.getCampaign() != null && t.getCampaign().getCampaignCode().equalsIgnoreCase(finalCode))
+                .collect(Collectors.toList());
 
         // Tổng tiền đã nộp theo từng sinh viên
         Map<String, BigDecimal> userPaidAmounts = transactions.stream()
@@ -279,12 +295,25 @@ public class AdminController {
 
     // ========== 3. XÁC NHẬN THANH TOÁN THỦ CÔNG ==========
     @PostMapping("/students/confirm-payment")
-    public ResponseEntity<Map<String, Object>> confirmPayment(@RequestParam String studentId) {
+    public ResponseEntity<Map<String, Object>> confirmPayment(
+            @RequestParam String studentId,
+            @RequestParam(required = false) String campaignCode) {
         User user = userRepo.findByStudentId(studentId.toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên"));
         
-        com.itmc.payment_service.entity.Campaign campaign = campaignRepository.findByCampaignCode("CAMP01")
-                .orElseThrow(() -> new RuntimeException("Chiến dịch CAMP01 chưa được tạo"));
+        String code = campaignCode;
+        if (code == null || code.trim().isEmpty()) {
+            List<Campaign> campaigns = campaignRepository.findAll();
+            if (!campaigns.isEmpty()) {
+                code = campaigns.get(campaigns.size() - 1).getCampaignCode();
+            } else {
+                code = "CAMP01";
+            }
+        }
+        
+        final String finalCode = code;
+        com.itmc.payment_service.entity.Campaign campaign = campaignRepository.findByCampaignCode(finalCode)
+                .orElseThrow(() -> new RuntimeException("Chiến dịch " + finalCode + " chưa được tạo"));
 
         // Tạo một giao dịch giả lập để ghi nhận đã nộp
         Transaction transaction = new Transaction();
@@ -321,6 +350,37 @@ public class AdminController {
     // ========== 4. TẠO QR TÙY CHỈNH (Đã xóa để đồng bộ với PayOS) ==========
 
     // ========== 5. QUẢN LÝ THÔNG TIN QUỸ ==========
+    @GetMapping("/campaigns")
+    public ResponseEntity<List<Campaign>> getAllCampaigns() {
+        return ResponseEntity.ok(campaignRepository.findAll());
+    }
+
+    @PostMapping("/campaign")
+    public ResponseEntity<?> createCampaign(@RequestBody Campaign newCampaign) {
+        if (newCampaign.getCampaignCode() == null || newCampaign.getCampaignCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Mã quỹ không được để trống"));
+        }
+        String formattedCode = newCampaign.getCampaignCode().trim().toUpperCase();
+        if (campaignRepository.findByCampaignCode(formattedCode).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Mã quỹ đã tồn tại: " + formattedCode));
+        }
+        newCampaign.setCampaignCode(formattedCode);
+        if (newCampaign.getStartDate() == null) {
+            newCampaign.setStartDate(LocalDateTime.now());
+        }
+        if (newCampaign.getEndDate() == null) {
+            newCampaign.setEndDate(LocalDateTime.now().plusMonths(3));
+        }
+        if (newCampaign.getStatus() == null) {
+            newCampaign.setStatus(com.itmc.payment_service.model.CampaignStatus.OPEN);
+        }
+        if (newCampaign.getAmountRequired() == null) {
+            newCampaign.setAmountRequired(new BigDecimal("100000"));
+        }
+        campaignRepository.save(newCampaign);
+        return ResponseEntity.ok(Map.of("message", "Tạo quỹ thành công", "campaign", newCampaign));
+    }
+
     @GetMapping("/campaign/{code}")
     public ResponseEntity<?> getCampaign(@PathVariable String code) {
         return campaignRepository.findByCampaignCode(code)

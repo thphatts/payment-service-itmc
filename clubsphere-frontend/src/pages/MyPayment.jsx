@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const MyPayment = () => {
   const [studentId, setStudentId] = useState('');
@@ -6,6 +6,33 @@ const MyPayment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+
+  const [campaigns, setCampaigns] = useState([]);
+  const [selectedCampaign, setSelectedCampaign] = useState('');
+
+  useEffect(() => {
+    // Fetch available campaigns
+    const fetchCampaigns = async () => {
+      try {
+        const response = await fetch('/api/v1/admin/campaigns', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCampaigns(data);
+          if (data.length > 0) {
+            setSelectedCampaign(data[data.length - 1].campaignCode);
+          } else {
+            setSelectedCampaign('CAMP01');
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi khi tải danh sách đợt quỹ', err);
+        setSelectedCampaign('CAMP01');
+      }
+    };
+    fetchCampaigns();
+  }, []);
 
   const fetchQrCode = async () => {
     if (!studentId) {
@@ -16,7 +43,8 @@ const MyPayment = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`/api/campaigns/CAMP01/qr?studentId=${studentId}`, {
+      // Use dynamic campaign code and add timestamp to avoid browser caching!
+      const response = await fetch(`/api/campaigns/${selectedCampaign}/qr?studentId=${studentId}&t=${Date.now()}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -68,6 +96,34 @@ const MyPayment = () => {
                   placeholder="Vd: N21DCCN001"
                 />
               </div>
+
+              <div className="space-y-1">
+                <label className="block text-label-sm font-bold text-on-surface-variant uppercase">Chọn đợt đóng quỹ</label>
+                <div className="relative">
+                  <select
+                    value={selectedCampaign}
+                    onChange={(e) => {
+                      setSelectedCampaign(e.target.value);
+                      setQrData(null); // Clear old QR when campaign changes
+                    }}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg focus:ring-1 focus:ring-primary outline-none font-bold text-on-surface appearance-none cursor-pointer"
+                  >
+                    {campaigns.length === 0 ? (
+                      <option value="CAMP01">Quỹ CLB (CAMP01)</option>
+                    ) : (
+                      campaigns.map((c) => (
+                        <option key={c.campaignCode} value={c.campaignCode}>
+                          {c.title || c.campaignCode} ({c.campaignCode})
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">
+                    arrow_drop_down
+                  </span>
+                </div>
+              </div>
+
               {error && <p className="text-label-sm text-error font-medium">{error}</p>}
               <button 
                 onClick={fetchQrCode}
@@ -97,7 +153,11 @@ const MyPayment = () => {
         <div className="lg:col-span-7">
           {qrData ? (
             <div className="bg-surface rounded-xl shadow-xl p-8 lg:p-12 border border-outline-variant/50 animate-in fade-in duration-500">
-              <div className="text-center mb-8">
+              <div className="text-center mb-8 border-b border-outline-variant/20 pb-4">
+                <h3 className="text-label-sm text-on-surface-variant uppercase tracking-widest font-bold mb-1">Đợt đóng quỹ</h3>
+                <p className="text-title-md font-bold text-primary mb-4 bg-primary-container/40 py-2 px-4 rounded-lg inline-block">
+                  {campaigns.find(c => c.campaignCode === selectedCampaign)?.title || selectedCampaign}
+                </p>
                 <h3 className="text-label-sm text-on-surface-variant uppercase tracking-widest font-bold mb-2">Số tiền cần đóng</h3>
                 <div className="text-display-lg font-black text-primary tracking-tight">
                   {qrData.amount.toLocaleString()} <span className="text-title-sm font-bold">VND</span>

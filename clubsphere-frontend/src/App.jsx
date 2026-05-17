@@ -37,6 +37,7 @@ function App() {
           <Route path="attendance" element={<Attendance />} />
           <Route path="directory" element={<Members />} />
           <Route path="fund-admin" element={<FundAdmin />} />
+          <Route path="finance" element={<FundAdmin />} />
           <Route path="settings" element={<Settings />} />
           <Route path="my-payment" element={<MyPayment />} />
         </Route>

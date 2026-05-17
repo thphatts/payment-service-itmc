@@ -120,6 +120,22 @@ const Layout = () => {
             </>
           )}
 
+          {role === 'MEMBER' && (
+            <Link
+              to="/finance"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
+                isActive('/finance') 
+                  ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
+                  : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
+              }`}
+            >
+              <span className={`material-symbols-outlined text-[20px] ${isActive('/finance') ? 'icon-fill' : ''}`}>
+                account_balance_wallet
+              </span>
+              <span className="text-label-md font-label-md">Finance</span>
+            </Link>
+          )}
+
           <Link
             to="/my-payment"
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${

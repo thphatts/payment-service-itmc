@@ -1,6 +1,7 @@
 package com.itmc.payment_service.controller;
 
 import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,16 +22,18 @@ public class WebhookController {
     }
 
     @PostMapping("/payment")
-    public ResponseEntity<?> handleWebhook(@RequestBody Map<String, Object> payload) {
-        System.out.println(">>> RAW Webhook Received: " + payload);
+    public ResponseEntity<?> handleWebhook(@RequestBody com.fasterxml.jackson.databind.node.ObjectNode payload) {
+        System.out.println(">>> RAW Webhook Received: " + payload.toString());
         
         try {
-            // Chuyển đổi Map sang Webhook object của PayOS SDK để verify
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            vn.payos.model.webhooks.Webhook webhookBody = mapper.convertValue(payload, vn.payos.model.webhooks.Webhook.class);
+            // Ánh xạ thẳng JSON tree vào model Webhook của PayOS để giữ nguyên vẹn cấu trúc và thứ tự field
+            vn.payos.model.webhooks.Webhook webhookBody = mapper.treeToValue(payload, vn.payos.model.webhooks.Webhook.class);
             
+            // SDK Xác thực chữ ký
             vn.payos.model.webhooks.WebhookData webhookData = payOS.webhooks().verify(webhookBody);
             
+            // Nếu không có lỗi văng ra -> Payload Hợp Lệ 100% -> Thực thi logic
             if (webhookData != null) {
                 com.itmc.payment_service.dto.PaymentWebhookRequest request = new com.itmc.payment_service.dto.PaymentWebhookRequest();
                 request.setTransactionContent(webhookData.getDescription());
@@ -41,13 +44,14 @@ public class WebhookController {
                 webhookService.processPayment(request);
                 System.out.println(">>> Processed Verified PayOS payment: " + webhookData.getReference());
             }
+            
+            return ResponseEntity.ok(Map.of("success", true));
+            
         } catch (Exception e) {
-            System.err.println(">>> Webhook verification failed: " + e.getMessage());
-            // In ra stack trace để debug kỹ hơn
-            e.printStackTrace();
+            System.err.println(">>> Webhook verification failed: HACKER DETECTED OR INVALID KEY! " + e.getMessage());
+            // Trả về mã lỗi 400 Bad Request để PayOS biết webhook bị từ chối
+            return ResponseEntity.status(400).body(Map.of("success", false, "message", "Invalid signature or payload"));
         }
-        
-        return ResponseEntity.ok(Map.of("success", true));
     }
 
     @org.springframework.web.bind.annotation.GetMapping("/payment")

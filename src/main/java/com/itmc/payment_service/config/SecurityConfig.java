@@ -45,6 +45,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/webhook/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/admin/campaigns", "/api/v1/admin/campaign/**").authenticated()
                 .requestMatchers("/api/v1/admin/dashboard/stats", "/api/v1/admin/students/overview").authenticated()
                 .requestMatchers("/api/admin/**", "/api/v1/admin/**", "/api/dashboard/**").hasRole("ADMIN")
                 .requestMatchers("/api/campaigns/**").authenticated()

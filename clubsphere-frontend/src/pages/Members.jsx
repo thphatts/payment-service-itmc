@@ -5,6 +5,7 @@ const Members = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const role = localStorage.getItem('role') || 'MEMBER';
 
   const fetchMembers = async () => {
@@ -24,12 +25,11 @@ const Members = () => {
     }
   };
 
-  const handleImport = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const handleProceedFile = async () => {
+    if (!selectedFile) return;
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', selectedFile);
 
     try {
       setLoading(true);
@@ -44,6 +44,7 @@ const Members = () => {
       
       if (result.success) {
         setMessage({ type: 'success', text: result.message });
+        setSelectedFile(null); // Clear selected file after successful import
         fetchMembers(); // Refresh list
       } else {
         setMessage({ type: 'error', text: result.message || 'Import thất bại' });
@@ -89,19 +90,51 @@ const Members = () => {
   return (
     <>
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h2 className="text-headline-lg font-headline-lg text-on-surface">Danh sách thành viên</h2>
           <p className="text-body-md text-on-surface-variant mt-1">Quản lý và theo dõi thông tin thành viên câu lạc bộ.</p>
         </div>
-        <div className="flex gap-2">
+        
+        {/* Actions bar for Admin */}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {role === 'ADMIN' && (
             <>
+              {/* Excel Select Button */}
               <label className="bg-surface text-on-surface border border-outline-variant px-5 py-2.5 rounded-lg font-label-md hover:bg-surface-container transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                 <span className="material-symbols-outlined text-sm">upload_file</span>
-                Import Excel
-                <input type="file" className="hidden" onChange={handleImport} accept=".xlsx,.xls,.csv" />
+                {selectedFile ? 'Đổi file' : 'Chọn file Excel'}
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  onChange={(e) => setSelectedFile(e.target.files[0])} 
+                  accept=".xlsx,.xls,.csv" 
+                />
               </label>
+
+              {/* Explicit Proceed file button when selected */}
+              {selectedFile && (
+                <div className="flex items-center gap-2 bg-primary-container/20 border border-primary/20 px-3 py-1.5 rounded-lg animate-in fade-in slide-in-from-left-3 duration-200">
+                  <span className="material-symbols-outlined text-primary text-[18px]">draft</span>
+                  <span className="text-body-sm font-bold text-on-surface-variant max-w-[150px] truncate">{selectedFile.name}</span>
+                  
+                  <button 
+                    onClick={handleProceedFile}
+                    className="ml-2 bg-primary text-on-primary hover:bg-surface-tint px-3 py-1.5 rounded-md text-label-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">play_circle</span>
+                    Proceed File
+                  </button>
+                  
+                  <button 
+                    onClick={() => setSelectedFile(null)}
+                    className="text-on-surface-variant hover:text-error transition-colors p-1"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </div>
+              )}
+
               <button className="bg-primary text-on-primary px-5 py-2.5 rounded-lg font-label-md hover:bg-surface-tint transition-all shadow-sm flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">person_add</span>
                 + Thêm thủ công
@@ -131,8 +164,7 @@ const Members = () => {
               <tr className="bg-surface-container-low border-b border-outline-variant/50">
                 <th className="py-3 px-4 text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Thành viên</th>
                 <th className="py-3 px-4 text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">MSSV</th>
-                <th className="py-3 px-4 text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Trạng thái Quỹ</th>
-                <th className="py-3 px-4 text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Tiền đã nộp</th>
+                <th className="py-3 px-4 text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Ban</th>
                 {role === 'ADMIN' && (
                   <th className="py-3 px-4 text-right text-label-sm font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider">Thao tác</th>
                 )}
@@ -141,14 +173,17 @@ const Members = () => {
             <tbody className="divide-y divide-outline-variant/30">
               {loading ? (
                 <tr>
-                  <td colSpan={role === 'ADMIN' ? "5" : "4"} className="py-10 text-center text-on-surface-variant">Đang tải danh sách...</td>
+                  <td colSpan={role === 'ADMIN' ? "4" : "3"} className="py-10 text-center text-on-surface-variant">Đang tải danh sách...</td>
                 </tr>
               ) : members.length === 0 ? (
                 <tr>
-                  <td colSpan={role === 'ADMIN' ? "5" : "4"} className="py-10 text-center text-on-surface-variant">Chưa có thành viên nào. {role === 'ADMIN' && 'Hãy import file Excel để bắt đầu.'}</td>
+                  <td colSpan={role === 'ADMIN' ? "4" : "3"} className="py-10 text-center text-on-surface-variant">Chưa có thành viên nào. {role === 'ADMIN' && 'Hãy import file Excel để bắt đầu.'}</td>
                 </tr>
               ) : (
-                members.map((member, index) => (
+                members.map((member, index) => {
+                  const isDesign = member.studentId.toUpperCase().includes('DCPT');
+                  const ban = isDesign ? 'Thiết Kế' : 'Lập Trình';
+                  return (
                   <tr key={index} className="hover:bg-primary/5 transition-colors group">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
@@ -164,18 +199,10 @@ const Members = () => {
                     <td className="py-3 px-4 text-body-sm text-on-surface font-mono">
                       {member.studentId}
                     </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm ${
-                        member.status === 'PAID' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${member.status === 'PAID' ? 'bg-green-600' : 'bg-red-600'}`}></span>
-                        {member.status === 'PAID' ? 'Đã nộp' : 'Chưa đóng'}
+                    <td className="py-3 px-4 text-body-sm text-on-surface">
+                      <span className={`inline-flex px-2.5 py-1 rounded-md text-label-sm font-bold ${isDesign ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {ban}
                       </span>
-                    </td>
-                    <td className="py-3 px-4 text-body-sm font-medium text-on-surface">
-                      {member.amount.toLocaleString()}₫
                     </td>
                     {role === 'ADMIN' && (
                       <td className="py-3 px-4 text-right">
@@ -193,7 +220,8 @@ const Members = () => {
                       </td>
                     )}
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>
