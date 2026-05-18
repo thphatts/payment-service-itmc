@@ -61,6 +61,7 @@ services:
     command:
       - http
       - frontend:80
+      - --domain=ashes-choosing-nursing.ngrok-free.dev
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     ports:
