@@ -159,6 +159,34 @@ const Layout = () => {
                 </span>
                 <span className="text-label-md font-label-md">Finance Admin</span>
               </Link>
+
+              <Link
+                to="/expenses"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
+                  isActive('/expenses') 
+                    ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
+                    : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[20px] ${isActive('/expenses') ? 'icon-fill' : ''}`}>
+                  receipt_long
+                </span>
+                <span className="text-label-md font-label-md">Expenses</span>
+              </Link>
+
+              <Link
+                to="/engagement"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-150 ${
+                  isActive('/engagement') 
+                    ? 'bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary border-l-4 border-primary dark:border-inverse-primary font-bold' 
+                    : 'text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-variant'
+                }`}
+              >
+                <span className={`material-symbols-outlined text-[20px] ${isActive('/engagement') ? 'icon-fill' : ''}`}>
+                  monitoring
+                </span>
+                <span className="text-label-md font-label-md">Engagement</span>
+              </Link>
             </>
           )}
 

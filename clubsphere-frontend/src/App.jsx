@@ -6,8 +6,11 @@ import Members from './pages/Members.jsx';
 import Attendance from './pages/Attendance.jsx';
 import Settings from './pages/Settings.jsx';
 import FundAdmin from './pages/FundAdmin.jsx';
+import ExpenseAdmin from './pages/ExpenseAdmin.jsx';
+import FinanceTransparency from './pages/FinanceTransparency.jsx';
 import MyPayment from './pages/MyPayment.jsx';
 import Login from './pages/Login.jsx';
+import EngagementDashboard from './pages/EngagementDashboard.jsx';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -37,7 +40,9 @@ function App() {
           <Route path="attendance" element={<Attendance />} />
           <Route path="directory" element={<Members />} />
           <Route path="fund-admin" element={<FundAdmin />} />
-          <Route path="finance" element={<FundAdmin />} />
+          <Route path="expenses" element={<ExpenseAdmin />} />
+          <Route path="finance" element={<FinanceTransparency />} />
+          <Route path="engagement" element={<EngagementDashboard />} />
           <Route path="settings" element={<Settings />} />
           <Route path="my-payment" element={<MyPayment />} />
         </Route>

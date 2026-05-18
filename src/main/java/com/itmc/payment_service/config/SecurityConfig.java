@@ -45,10 +45,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/webhook/**").permitAll()
+                .requestMatchers("/api/v1/uploads/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/admin/campaigns", "/api/v1/admin/campaign/**").authenticated()
                 .requestMatchers("/api/v1/admin/dashboard/stats", "/api/v1/admin/students/overview").authenticated()
                 .requestMatchers("/api/admin/**", "/api/v1/admin/**", "/api/dashboard/**").hasRole("ADMIN")
-                .requestMatchers("/api/campaigns/**").authenticated()
+                .requestMatchers("/api/campaigns/**", "/api/v1/finance/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -59,7 +60,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"));
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);

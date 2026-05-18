@@ -144,6 +144,7 @@ const Login = () => {
                                         placeholder="Ví dụ: N23DCCN000" 
                                         required 
                                         type="text"
+                                        autoComplete="off"
                                         value={studentId}
                                         onChange={(e) => setStudentId(e.target.value.toUpperCase())}
                                     />
@@ -164,6 +165,7 @@ const Login = () => {
                                         placeholder="••••••••" 
                                         required 
                                         type="password"
+                                        autoComplete="new-password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                     />

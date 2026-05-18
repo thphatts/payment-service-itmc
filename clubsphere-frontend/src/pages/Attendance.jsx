@@ -19,14 +19,32 @@ const Attendance = () => {
       const data = await response.json();
       setMembers(data);
       
-      // Load saved attendance from localStorage for the selected event date
-      const saved = localStorage.getItem(`attendance_${eventDate}`);
-      const initialAttendance = {};
-      if (saved) {
-        try {
-          Object.assign(initialAttendance, JSON.parse(saved));
-        } catch (e) {
-          console.error('Error parsing saved attendance:', e);
+      let initialAttendance = {};
+
+      // 1. Try to fetch from server first
+      try {
+        const res = await fetch(`/api/v1/admin/attendance?eventDate=${encodeURIComponent(eventDate)}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (res.ok) {
+          const serverData = await res.json();
+          Object.assign(initialAttendance, serverData);
+        }
+      } catch (serverErr) {
+        console.error('Error fetching server attendance:', serverErr);
+      }
+
+      // 2. Fallback to localStorage if server returns empty
+      if (Object.keys(initialAttendance).length === 0) {
+        const saved = localStorage.getItem(`attendance_${eventDate}`);
+        if (saved) {
+          try {
+            Object.assign(initialAttendance, JSON.parse(saved));
+          } catch (e) {
+            console.error('Error parsing saved attendance:', e);
+          }
         }
       }
 
@@ -54,13 +72,33 @@ const Attendance = () => {
     }));
   };
 
-  const handleSaveAttendance = () => {
+  const handleSaveAttendance = async () => {
     try {
+      // Save locally first
       localStorage.setItem(`attendance_${eventDate}`, JSON.stringify(attendanceData));
-      setSaveMessage({ type: 'success', text: `Đã lưu trạng thái điểm danh cho ngày "${eventDate}" thành công!` });
+      
+      // Save to server
+      const response = await fetch('/api/v1/admin/attendance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          eventDate: eventDate,
+          attendanceData: attendanceData
+        })
+      });
+
+      if (response.ok) {
+        setSaveMessage({ type: 'success', text: `Đã lưu trạng thái điểm danh cho ngày "${eventDate}" lên hệ thống thành công!` });
+      } else {
+        const errorData = await response.json();
+        setSaveMessage({ type: 'error', text: `Không thể đồng bộ với server: ${errorData.message || 'Lỗi không xác định'}` });
+      }
       setTimeout(() => setSaveMessage(null), 3500);
     } catch (error) {
-      setSaveMessage({ type: 'error', text: 'Có lỗi xảy ra khi lưu điểm danh.' });
+      setSaveMessage({ type: 'error', text: 'Lỗi kết nối khi đồng bộ điểm danh với máy chủ.' });
       setTimeout(() => setSaveMessage(null), 3500);
     }
   };

@@ -60,13 +60,13 @@ services:
     container_name: fund-ngrok
     command:
       - http
-      - backend:8080
+      - frontend:80
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     ports:
       - "4040:4040"
     depends_on:
-      - backend
+      - frontend
     restart: always
 
 volumes:

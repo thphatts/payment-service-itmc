@@ -26,7 +26,7 @@ public class NotificationController {
 
     private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email).orElse(null);
+        return userRepository.findByStudentId(email).orElse(null);
     }
 
     @GetMapping
