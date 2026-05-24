@@ -12,6 +12,12 @@ const FundAdmin = () => {
   const [newCampaignForm, setNewCampaignForm] = useState({ campaignCode: '', title: '', amountRequired: 100000, description: '' });
   const [message, setMessage] = useState({ text: '', type: '' });
 
+  // States for bulk email and notifications
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [notifyLoading, setNotifyLoading] = useState(false);
+  const [closeCampaignOnNotify, setCloseCampaignOnNotify] = useState(false);
+
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -105,6 +111,32 @@ const FundAdmin = () => {
       setMessage({ text: 'Lỗi kết nối server', type: 'error' });
     }
   };
+
+  const handleSendNotifications = async () => {
+    try {
+      setNotifyLoading(true);
+      const response = await fetch(`/api/v1/admin/campaign/${selectedCampaignCode}/notify-expiration?closeCampaign=${closeCampaignOnNotify}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        setMessage({ text: 'Đã bắt đầu gửi thông báo nhắc nhở hàng loạt thành công!', type: 'success' });
+        setIsNotifying(false);
+        fetchData(); // Load lại trạng thái đợt quỹ và danh sách sinh viên
+      } else {
+        const data = await response.json();
+        setMessage({ text: data.message || 'Lỗi khi gửi thông báo nhắc nhở', type: 'error' });
+      }
+    } catch (error) {
+      setMessage({ text: 'Lỗi kết nối server', type: 'error' });
+    } finally {
+      setNotifyLoading(false);
+    }
+  };
+
 
   const handleExportExcel = () => {
     // Determine title for merged header
@@ -295,6 +327,32 @@ const FundAdmin = () => {
                 <p className="text-body-md font-bold text-on-surface">{campaign.title || 'QUỸ CLB'}</p>
               </div>
               <div>
+                <p className="text-label-sm font-label-sm text-on-surface-variant uppercase mb-1">Trạng thái</p>
+                <div>
+                  {(() => {
+                    const isClosed = campaign.status === 'CLOSED';
+                    const isCampaignExpired = campaign.endDate && new Date(campaign.endDate) < new Date() && campaign.status === 'OPEN';
+                    return (
+                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        isClosed 
+                          ? 'bg-neutral-100 text-neutral-600 border border-neutral-200' 
+                          : isCampaignExpired 
+                            ? 'bg-red-100 text-red-700 border border-red-200 animate-pulse' 
+                            : 'bg-green-100 text-green-700 border border-green-200'
+                      }`}>
+                        {isClosed ? 'ĐÃ ĐÓNG' : isCampaignExpired ? 'HẾT HẠN (CHƯA ĐÓNG)' : 'ĐANG MỞ'}
+                      </span>
+                    );
+                  })()}
+                </div>
+              </div>
+              <div>
+                <p className="text-label-sm font-label-sm text-on-surface-variant uppercase mb-1">Hạn đóng quỹ</p>
+                <p className="text-body-sm font-bold text-on-surface">
+                  {campaign.endDate ? new Date(campaign.endDate).toLocaleString('vi-VN') : 'Không giới hạn'}
+                </p>
+              </div>
+              <div>
                 <p className="text-label-sm font-label-sm text-on-surface-variant uppercase mb-1">Mức phí yêu cầu</p>
                 <p className="text-body-md font-bold text-on-surface">{(campaign.amountRequired || 0).toLocaleString()}₫ / người</p>
               </div>
@@ -302,6 +360,18 @@ const FundAdmin = () => {
                 <p className="text-label-sm font-label-sm text-on-surface-variant uppercase mb-1">Nội dung / Mô tả</p>
                 <p className="text-body-sm text-on-surface-variant leading-relaxed">{campaign.description || 'Chưa có mô tả'}</p>
               </div>
+
+              {role === 'ADMIN' && campaign.status === 'OPEN' && students.filter(s => s.status !== 'PAID').length > 0 && (
+                <div className="pt-4 border-t border-outline-variant/30">
+                  <button
+                    onClick={() => setIsNotifying(true)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-label-sm font-bold transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">campaign</span>
+                    Gửi TB Hết Hạn Quỹ
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -438,6 +508,106 @@ const FundAdmin = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Expiration Notification Modal */}
+      {isNotifying && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200 border border-outline-variant/50">
+            <div className="p-6 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-lowest">
+              <h3 className="text-headline-md font-bold text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-600">campaign</span>
+                Gửi Thông Báo Hết Hạn Quỹ
+              </h3>
+              <button onClick={() => setIsNotifying(false)} className="text-on-surface-variant hover:text-on-surface transition-colors" disabled={notifyLoading}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 text-amber-900">
+                <span className="material-symbols-outlined text-[24px] text-amber-700 shrink-0">info</span>
+                <div>
+                  <h5 className="font-bold text-sm">Gửi thông báo & email nhắc nhở hàng loạt</h5>
+                  <p className="text-xs mt-1 leading-relaxed">
+                    Hệ thống sẽ gửi **Email HTML chuyên nghiệp (kèm ảnh mã VietQR cá nhân hóa)** và **In-app Notification** trực tiếp tới **{students.filter(s => s.status !== 'PAID').length} thành viên chưa đóng quỹ**.
+                  </p>
+                </div>
+              </div>
+
+              {/* Mẫu Preview Email */}
+              <div className="space-y-1">
+                <label className="block text-label-sm font-bold text-on-surface-variant uppercase">Xem trước nội dung Email gửi đi</label>
+                <div className="bg-surface-container-low border border-outline-variant/80 rounded-xl p-4 text-xs font-sans max-h-48 overflow-y-auto space-y-3">
+                  <div className="border-b border-outline-variant pb-2">
+                    <p className="font-mono text-on-surface-variant"><span className="font-bold">Tiêu đề:</span> [ITMC Remind] Nhắc nhở: Đợt đóng quỹ {campaign.title} sắp hết hạn!</p>
+                  </div>
+                  <div className="space-y-2 leading-relaxed text-on-surface">
+                    <p className="font-bold">Chào bạn [Họ tên thành viên] ([MSSV]),</p>
+                    <p>Ban tài chính CLB ITMC xin thông báo về đợt đóng quỹ hoạt động của bạn. Dưới đây là thông tin chi tiết đợt đóng quỹ:</p>
+                    <div className="bg-surface border-l-4 border-amber-600 p-2.5 rounded-r-lg font-mono text-[11px] space-y-1">
+                      <p><span className="text-on-surface-variant">Tên đợt quỹ:</span> {campaign.title}</p>
+                      <p><span className="text-on-surface-variant">Mức đóng:</span> {(campaign.amountRequired || 0).toLocaleString()}₫</p>
+                      <p><span className="text-on-surface-variant">Hạn chót:</span> {campaign.endDate ? new Date(campaign.endDate).toLocaleString('vi-VN') : 'Không giới hạn'}</p>
+                    </div>
+                    <div className="bg-surface-container-lowest border border-dashed border-outline-variant p-3 rounded-lg text-center space-y-1.5">
+                      <div className="w-24 h-24 bg-white border border-outline-variant mx-auto flex items-center justify-center rounded">
+                        <span className="material-symbols-outlined text-[36px] text-neutral-400">qr_code_2</span>
+                      </div>
+                      <p className="font-bold text-[10px]">Mã VietQR cá nhân hóa</p>
+                      <p className="text-[9px] text-on-surface-variant">Chứa sẵn MSSV và số tiền đợt quỹ này để tự đối soát giao dịch</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tùy chọn đóng quỹ */}
+              <div className="flex items-start gap-3 p-3 bg-surface-container-lowest border border-outline-variant/40 rounded-xl">
+                <input 
+                  type="checkbox" 
+                  id="closeCampaignCheckbox" 
+                  checked={closeCampaignOnNotify}
+                  onChange={(e) => setCloseCampaignOnNotify(e.target.checked)}
+                  className="mt-1 cursor-pointer w-4 h-4 rounded text-primary focus:ring-primary border-outline-variant"
+                  disabled={notifyLoading}
+                />
+                <label htmlFor="closeCampaignCheckbox" className="text-xs font-medium text-on-surface select-none cursor-pointer leading-tight">
+                  <span className="font-bold text-sm block mb-1">Đồng thời đóng đợt thu quỹ này</span>
+                  Trạng thái của chiến dịch sẽ được cập nhật thành **CLOSED** sau khi thông báo hoàn tất, ngăn chặn đóng tiền trễ.
+                </label>
+              </div>
+
+              <div className="pt-4 flex gap-3 border-t border-outline-variant/20">
+                <button 
+                  type="button"
+                  onClick={() => setIsNotifying(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-outline-variant text-label-md font-bold text-on-surface-variant hover:bg-surface-container transition-all"
+                  disabled={notifyLoading}
+                >
+                  Hủy
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleSendNotifications}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-600 text-white text-label-md font-bold hover:bg-amber-700 shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                  disabled={notifyLoading}
+                >
+                  {notifyLoading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Đang xử lý gửi...
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[18px]">send</span>
+                      Xác nhận gửi
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -35,6 +35,8 @@ import com.itmc.payment_service.repository.UserRepository;
 import com.itmc.payment_service.service.CampaignService;
 import com.itmc.payment_service.dto.QrResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.itmc.payment_service.scheduler.CampaignScheduler;
+
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -46,6 +48,7 @@ public class AdminController {
     private final CampaignRepository campaignRepository;
     private final CampaignService campaignService;
     private final PasswordEncoder passwordEncoder;
+    private final CampaignScheduler campaignScheduler;
 
     // MSSV: 1 chữ cái đầu (B, N, ...) + 2 số năm + 2-4 ký tự mã ngành + 2-4 số
     // Ví dụ: N23DCCN204, B23DCCN123, N24DCPT006, N23DCAT074
@@ -53,22 +56,24 @@ public class AdminController {
     private static final Pattern STUDENT_ID_PATTERN = Pattern.compile(
             "^[A-Z0-9]{3,15}$", Pattern.CASE_INSENSITIVE);
 
-    public AdminController(UserRepository userRepo, TransactionRepository transactionRepo, 
-                           CampaignRepository campaignRepository, CampaignService campaignService,
-                           PasswordEncoder passwordEncoder) {
+    public AdminController(UserRepository userRepo, TransactionRepository transactionRepo,
+            CampaignRepository campaignRepository, CampaignService campaignService,
+            PasswordEncoder passwordEncoder, CampaignScheduler campaignScheduler) {
         this.userRepo = userRepo;
         this.transactionRepo = transactionRepo;
         this.campaignRepository = campaignRepository;
         this.campaignService = campaignService;
         this.passwordEncoder = passwordEncoder;
+        this.campaignScheduler = campaignScheduler;
     }
+
 
     // ========== 1. XEM TỔNG QUAN THÀNH VIÊN ==========
     @GetMapping("/students/overview")
     public ResponseEntity<List<Map<String, Object>>> getStudentsOverview(
             @RequestParam(required = false) String campaignCode) {
         List<User> users = userRepo.findAll();
-        
+
         String code = campaignCode;
         if (code == null || code.trim().isEmpty()) {
             List<Campaign> campaigns = campaignRepository.findAll();
@@ -78,7 +83,7 @@ public class AdminController {
                 code = "CAMP01";
             }
         }
-        
+
         final String finalCode = code;
         BigDecimal amountRequired = campaignRepository.findByCampaignCode(finalCode)
                 .map(c -> c.getAmountRequired())
@@ -94,16 +99,14 @@ public class AdminController {
                 .collect(Collectors.groupingBy(
                         t -> t.getUser().getStudentId(),
                         Collectors.mapping(Transaction::getAmountPaid,
-                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
-                ));
+                                Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))));
 
         // Ngày nộp gần nhất
         Map<String, LocalDateTime> userLatestDates = transactions.stream()
                 .collect(Collectors.toMap(
                         t -> t.getUser().getStudentId(),
                         t -> t.getCreatedAt(),
-                        (d1, d2) -> d1.isAfter(d2) ? d1 : d2
-                ));
+                        (d1, d2) -> d1.isAfter(d2) ? d1 : d2));
 
         List<Map<String, Object>> overview = users.stream().map(user -> {
             Map<String, Object> map = new HashMap<>();
@@ -130,7 +133,7 @@ public class AdminController {
     public ResponseEntity<Map<String, Object>> getDashboardStats() {
         long totalMembers = userRepo.count();
         List<Transaction> allTransactions = transactionRepo.findAll();
-        
+
         BigDecimal totalFund = allTransactions.stream()
                 .map(Transaction::getAmountPaid)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -169,7 +172,8 @@ public class AdminController {
 
         String filename = file.getOriginalFilename();
         if (filename == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Không xác định được tên file"));
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", "Không xác định được tên file"));
         }
 
         try {
@@ -179,7 +183,8 @@ public class AdminController {
             } else if (filename.endsWith(".csv")) {
                 rows = readCsvFile(file);
             } else {
-                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Chỉ hỗ trợ file .csv, .xlsx, .xls"));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Chỉ hỗ trợ file .csv, .xlsx, .xls"));
             }
 
             List<User> newUsers = new ArrayList<>();
@@ -192,7 +197,7 @@ public class AdminController {
 
                 // ====== TỰ ĐỘNG PHÁT HIỆN CỘT ======
                 // Format file Excel của CLB: STT | Họ tên | MSSV | Mail | Ban | Quỹ
-                // Format file CSV đơn giản:  MSSV | Họ tên | Email
+                // Format file CSV đơn giản: MSSV | Họ tên | Email
                 String studentId = "";
                 String fullName = "";
                 String email = "";
@@ -288,8 +293,7 @@ public class AdminController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "message", "Lỗi khi đọc file: " + e.getMessage()
-            ));
+                    "message", "Lỗi khi đọc file: " + e.getMessage()));
         }
     }
 
@@ -300,7 +304,7 @@ public class AdminController {
             @RequestParam(required = false) String campaignCode) {
         User user = userRepo.findByStudentId(studentId.toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên"));
-        
+
         String code = campaignCode;
         if (code == null || code.trim().isEmpty()) {
             List<Campaign> campaigns = campaignRepository.findAll();
@@ -310,7 +314,7 @@ public class AdminController {
                 code = "CAMP01";
             }
         }
-        
+
         final String finalCode = code;
         com.itmc.payment_service.entity.Campaign campaign = campaignRepository.findByCampaignCode(finalCode)
                 .orElseThrow(() -> new RuntimeException("Chiến dịch " + finalCode + " chưa được tạo"));
@@ -326,7 +330,8 @@ public class AdminController {
 
         transactionRepo.save(transaction);
 
-        return ResponseEntity.ok(Map.of("success", true, "message", "Đã xác nhận thanh toán cho " + user.getFullName()));
+        return ResponseEntity
+                .ok(Map.of("success", true, "message", "Đã xác nhận thanh toán cho " + user.getFullName()));
     }
 
     // ========== 3b. XÓA SINH VIÊN ==========
@@ -392,9 +397,11 @@ public class AdminController {
     public ResponseEntity<?> updateCampaign(@PathVariable String code, @RequestBody Map<String, Object> updates) {
         Campaign campaign = campaignRepository.findByCampaignCode(code)
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
-        
-        if (updates.containsKey("title")) campaign.setTitle((String) updates.get("title"));
-        if (updates.containsKey("description")) campaign.setDescription((String) updates.get("description"));
+
+        if (updates.containsKey("title"))
+            campaign.setTitle((String) updates.get("title"));
+        if (updates.containsKey("description"))
+            campaign.setDescription((String) updates.get("description"));
         if (updates.containsKey("amountRequired")) {
             Object amt = updates.get("amountRequired");
             if (amt instanceof Integer i) {
@@ -405,20 +412,48 @@ public class AdminController {
                 campaign.setAmountRequired(new BigDecimal(s));
             }
         }
-        
+
         campaignRepository.save(campaign);
         return ResponseEntity.ok(Map.of("message", "Đã cập nhật thông tin quỹ", "campaign", campaign));
+    }
+
+    @PostMapping("/campaign/{code}/notify-expiration")
+    public ResponseEntity<?> notifyExpiration(
+            @PathVariable String code,
+            @RequestParam(defaultValue = "false") boolean closeCampaign) {
+        
+        com.itmc.payment_service.entity.Campaign campaign = campaignRepository.findByCampaignCode(code.toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đợt quỹ " + code));
+        
+        // Kích hoạt gửi thông báo hàng loạt qua Scheduler/Service
+        campaignScheduler.sendBulkNotifications(campaign, true);
+        
+        if (closeCampaign) {
+            campaign.setStatus(com.itmc.payment_service.model.CampaignStatus.CLOSED);
+            campaignRepository.save(campaign);
+        }
+        
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Đã bắt đầu gửi thông báo nhắc nhở hàng loạt đến các thành viên chưa đóng quỹ." + 
+                           (closeCampaign ? " Đợt quỹ cũng đã được đóng." : "")
+        ));
     }
 
     // ========== HELPER: Đọc file CSV ==========
     private List<String[]> readCsvFile(MultipartFile file) throws Exception {
         List<String[]> rows = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             boolean isFirstLine = true;
             while ((line = reader.readLine()) != null) {
-                if (isFirstLine) { isFirstLine = false; continue; } // Bỏ header
-                if (line.trim().isEmpty()) continue; // Bỏ dòng trống
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue;
+                } // Bỏ header
+                if (line.trim().isEmpty())
+                    continue; // Bỏ dòng trống
                 String[] data = line.split(",");
                 rows.add(data);
             }
@@ -432,20 +467,23 @@ public class AdminController {
         // Sử dụng WorkbookFactory để hỗ trợ cả .xls và .xlsx
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-            
+
             for (Row row : sheet) {
                 int cellCount = row.getLastCellNum();
-                if (cellCount <= 0) continue;
+                if (cellCount <= 0)
+                    continue;
 
                 String[] data = new String[cellCount];
                 boolean hasContent = false;
                 for (int i = 0; i < cellCount; i++) {
                     Cell cell = row.getCell(i, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
                     data[i] = getCellStringValue(cell);
-                    if (!data[i].isEmpty()) hasContent = true;
+                    if (!data[i].isEmpty())
+                        hasContent = true;
                 }
 
-                // Kiểm tra xem dòng này có phải là header không (Ví dụ: chứa chữ "STT", "Họ tên", "MSSV")
+                // Kiểm tra xem dòng này có phải là header không (Ví dụ: chứa chữ "STT", "Họ
+                // tên", "MSSV")
                 boolean isHeader = false;
                 for (String val : data) {
                     String v = val.toLowerCase();
@@ -465,20 +503,27 @@ public class AdminController {
 
     // ========== HELPER: Đọc giá trị cell Excel an toàn ==========
     private String getCellStringValue(Cell cell) {
-        if (cell == null) return "";
+        if (cell == null)
+            return "";
         switch (cell.getCellType()) {
-            case STRING:  return cell.getStringCellValue().trim();
+            case STRING:
+                return cell.getStringCellValue().trim();
             case NUMERIC:
                 double val = cell.getNumericCellValue();
                 if (val == Math.floor(val)) {
                     return String.valueOf((long) val); // Tránh trả về "1.0" cho số nguyên
                 }
                 return String.valueOf(val);
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
             case FORMULA:
-                try { return cell.getStringCellValue().trim(); }
-                catch (Exception e) { return String.valueOf(cell.getNumericCellValue()); }
-            default:      return "";
+                try {
+                    return cell.getStringCellValue().trim();
+                } catch (Exception e) {
+                    return String.valueOf(cell.getNumericCellValue());
+                }
+            default:
+                return "";
         }
     }
 }

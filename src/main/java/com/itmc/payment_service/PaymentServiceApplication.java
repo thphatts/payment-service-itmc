@@ -2,6 +2,8 @@ package com.itmc.payment_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +14,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @SpringBootApplication
+@EnableAsync
+@EnableScheduling
 public class PaymentServiceApplication {
 
 	public static void main(String[] args) {

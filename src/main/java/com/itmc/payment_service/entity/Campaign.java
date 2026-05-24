@@ -36,6 +36,9 @@ public class Campaign {
     @Enumerated(EnumType.STRING)
     private CampaignStatus status;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean reminderSent = false;
+
     public Campaign() {
     }
 
@@ -102,4 +105,13 @@ public class Campaign {
     public void setStatus(CampaignStatus status) {
         this.status = status;
     }
+
+    public boolean isReminderSent() {
+        return reminderSent;
+    }
+
+    public void setReminderSent(boolean reminderSent) {
+        this.reminderSent = reminderSent;
+    }
 }
+
